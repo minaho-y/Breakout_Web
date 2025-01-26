@@ -2,13 +2,13 @@ from enum import Enum, auto
 import pygame
 import asyncio
 import sys
+from config import SCREEN
+from title import title_screen
 from game import game_screen
+from result import result_screen
 
 ### 定数
 F_RATE = 60             # フレームレート
-
-### 画面定義(X軸,Y軸,横,縦)
-SCREEN  = pygame.Rect(0, 0, 800, 600) # 画面サイズ
 
 ############################
 ### 画面モードクラス

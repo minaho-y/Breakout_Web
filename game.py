@@ -4,7 +4,7 @@ import pygame
 import sys
 import pygame.event
 from pygame.locals import *
-from main import SCREEN
+from config import SCREEN
 
 ### 定数
 BALL_SIZE = 18          # ボールサイズ
@@ -193,8 +193,6 @@ async def game_screen(screen):
     score = Score(10, 10)
 
     Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score)
-
-    
 
     # 全てのスプライトグループを更新
     group.update()
