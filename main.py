@@ -2,21 +2,10 @@ from enum import Enum, auto
 import pygame
 import asyncio
 import sys
-from config import SCREEN
+from config import SCREEN, SCREEN_MODE, F_RATE
 from title import title_screen
 from game import game_screen
 from result import result_screen
-
-### 定数
-F_RATE = 60             # フレームレート
-
-############################
-### 画面モードクラス
-############################
-class SCREEN_MODE(Enum):
-    TITLE = auto()
-    GAME = auto()
-    RESULT = auto()
 
 current_state = SCREEN_MODE.TITLE  # 初期状態はタイトル画面
 ############################
@@ -29,25 +18,26 @@ async def main():
 
     clock = pygame.time.Clock()
 
+    # 現在の画面を記録（変更を検知するため）
+    previous_state = None 
+
     global current_state
     running = True
 
-    while(running):
+    while running:
         clock.tick(F_RATE)
         await asyncio.sleep(0)    #引数は0で固定
-        screen.fill((0, 0, 0))
 
-        # 画面の切り替え
-        if current_state == SCREEN_MODE.TITLE:
-            title_screen(screen)
-        elif current_state == SCREEN_MODE.GAME:
-            game_screen(screen)
-        elif current_state == SCREEN_MODE.RESULT:
-            result_screen(screen)
-
-        # 画面更新
-        pygame.display.update()
-
+        # 画面が切り替わったら再描画
+        if current_state != previous_state:
+            if current_state == SCREEN_MODE.TITLE:
+                await title_screen(screen)
+            elif current_state == SCREEN_MODE.GAME:
+                await game_screen(screen)
+            elif current_state == SCREEN_MODE.RESULT:
+                await result_screen(screen)
+        previous_state = current_state
+        
         # イベント処理
         for event in pygame.event.get():
             # 閉じるボタンが押されたら終了
@@ -55,10 +45,18 @@ async def main():
                 running = False
             # キーイベント
             if event.type == pygame.KEYDOWN:
+                print(f"Current state: {current_state}")
                 # Escキーが押されたら終了
                 if event.key == pygame.K_ESCAPE:
                     running = False
-
+                # タイトル画面 -> ゲーム画面
+                if current_state == SCREEN_MODE.TITLE and event.key == pygame.K_RETURN:
+                    current_state = SCREEN_MODE.GAME
+                # ゲーム画面 -> リザルト画面
+                if current_state == SCREEN_MODE.GAME and event.key == pygame.K_RIGHT:
+                    current_state = SCREEN_MODE.RESULT
+        
+        pygame.display.flip()  # 画面更新
     # 終了処理
     pygame.quit()
     sys.exit()

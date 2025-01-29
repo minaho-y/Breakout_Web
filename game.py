@@ -4,7 +4,7 @@ import pygame
 import sys
 import pygame.event
 from pygame.locals import *
-from config import SCREEN
+from config import SCREEN, SCREEN_MODE, F_RATE
 
 ### 定数
 BALL_SIZE = 18          # ボールサイズ
@@ -171,6 +171,10 @@ class Score:
 ############################
 async def game_screen(screen):
 
+    # クロックオブジェクトの作成
+    clock = pygame.time.Clock()
+    running = True
+
     # 描画用のスプライトグループ
     group = pygame.sprite.RenderUpdates()
 
@@ -194,9 +198,22 @@ async def game_screen(screen):
 
     Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score)
 
-    # 全てのスプライトグループを更新
-    group.update()
-    # 全てのスプライトグループを描画
-    group.draw(screen)
-    # スコアを描画
-    score.draw(screen)
+    while running:
+        clock.tick(F_RATE)
+        # await asyncio.sleep(0)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                running = False
+
+        # 全てのスプライトグループを更新
+        group.update()
+        screen.fill((0, 0, 0))  # 画面クリア
+        # 全てのスプライトグループを描画
+        group.draw(screen)
+        # スコアを描画
+        score.draw(screen)
+
+        pygame.display.update()  # 画面更新
