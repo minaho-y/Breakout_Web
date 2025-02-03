@@ -5,6 +5,7 @@ import sys
 import pygame.event
 from pygame.locals import *
 from config import SCREEN, SCREEN_MODE, F_RATE
+from result import result_screen
 
 ### 定数
 BALL_SIZE = 18          # ボールサイズ
@@ -16,6 +17,8 @@ BLOCK_LOWS = 6          # ブロック縦列の数
 BLOCK_COLS = 14         # ブロック横列の数
 B_TOP = 50              # ブロック上の余白
 BLOCK_OFFSET_X = int((SCREEN.width - (BLOCK_WIDTH * BLOCK_COLS)) / 2)   # ブロック横の余白
+
+E_TIME = 3            # ゲーム終了を表示する時間
 
 ### 画像のパス
 PADDLE_IMAGE_PATH = "paddle_04.png"
@@ -47,7 +50,7 @@ class Paddle(pygame.sprite.Sprite):
 ### ボールクラス
 ############################
 class Ball(pygame.sprite.Sprite):
-    def __init__(self, filename, paddle, blocks, speed, angle_left, angle_right, score):
+    def __init__(self, filename, paddle, blocks, speed, angle_left, angle_right, score, life):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.image = pygame.image.load(filename).convert_alpha()
         self.image = pygame.transform.scale(self.image, (BALL_SIZE, BALL_SIZE))
@@ -56,6 +59,7 @@ class Ball(pygame.sprite.Sprite):
         self.paddle = paddle        # パドルへの参照
         self.blocks = blocks        # ブロックグループへの参照
         self.score = score          # スコアへの参照
+        self.life = life            # ライフへの参照
         self.update = self.start    # ゲーム開始状態に更新
         self.speed = speed
         self.angle_left = angle_left    # パドルへの反射方向
@@ -102,6 +106,7 @@ class Ball(pygame.sprite.Sprite):
         # ボールを落とした場合
         if self.rect.top > SCREEN.bottom:
             self.update = self.start    # ボールを初期状態に
+            self.life.add_life(-1)      # ライフを1減らす
             if self.score.get_score() < 50:
                 self.score.set_score(0)     # スコアを0点に
             else: self.score.add_score(-50)
@@ -132,6 +137,16 @@ class Ball(pygame.sprite.Sprite):
                     self.rect.top = block.rect.bottom
                     self.dy = -self.dy
 
+            # ### 残ブロックなし
+            # if len(self.blocks) == 0:
+            #     ### GAME CLEARを表示
+            #     font = pygame.font.Font(None, 60)
+            #     text = font.render("GAME CLEAR", True, (63,255,63))
+            #     screen.blit(text, [59,299])
+            #     pygame.display.update()
+            #     ### CLEAR画面時間
+            #     time.sleep(E_TIME)
+
 ############################
 ### ブロッククラス
 ############################
@@ -154,7 +169,7 @@ class Score:
         (self.x, self.y) = (x, y)
 
     def draw(self, screen):
-        img = self.sysfont.render('SCORE:' + str(self.score), True, (255, 255, 250))
+        img = self.sysfont.render('SCORE : ' + str(self.score), True, (255, 255, 250))
         screen.blit(img, (self.x, self.y))
 
     def add_score(self, x):
@@ -165,6 +180,28 @@ class Score:
 
     def get_score(self):
         return self.score
+    
+############################
+### ライフクラス
+############################
+class Life:
+    def __init__(self, x, y):
+        self.life = 1
+        self.sysfont = pygame.font.SysFont(None, 30)
+        (self.x, self.y) = (x, y)
+
+    def draw(self, screen):
+        img = self.sysfont.render('LIFE : ' + str(self.life), True, (255, 255, 250))
+        screen.blit(img, (self.x, self.y))
+
+    # def set_life(self, x):
+    #     self.life = x
+
+    def add_life(self, x):
+        self.life += x
+
+    def get_life(self):
+        return self.life
  
 ############################
 ### メイン関数 
@@ -196,7 +233,10 @@ async def game_screen(screen):
     # スコアを画面に表示
     score = Score(10, 10)
 
-    Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score)
+    # ライフを画面に表示
+    life = Life(710, 10)
+
+    Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score, life)
 
     while running:
         clock.tick(F_RATE)
@@ -207,6 +247,12 @@ async def game_screen(screen):
                 running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 running = False
+            if life.get_life() < 1:
+                running = False
+                global current_state
+                current_state = SCREEN_MODE.RESULT
+                await result_screen(screen)
+                return
 
         # 全てのスプライトグループを更新
         group.update()
@@ -215,5 +261,10 @@ async def game_screen(screen):
         group.draw(screen)
         # スコアを描画
         score.draw(screen)
+        # スコアを描画
+        life.draw(screen)
 
         pygame.display.update()  # 画面更新
+
+        # PyGame が初期化されてからの時間をミリ秒単位で返します。
+        # time_elapsed = pygame.time.get_ticks()

@@ -53,8 +53,8 @@ async def main():
                 if current_state == SCREEN_MODE.TITLE and event.key == pygame.K_RETURN:
                     current_state = SCREEN_MODE.GAME
                 # ゲーム画面 -> リザルト画面
-                if current_state == SCREEN_MODE.GAME and event.key == pygame.K_RIGHT:
-                    current_state = SCREEN_MODE.RESULT
+                # if current_state == SCREEN_MODE.GAME:
+                #     current_state = SCREEN_MODE.RESULT
         
         pygame.display.flip()  # 画面更新
     # 終了処理
