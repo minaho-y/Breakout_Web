@@ -243,6 +243,8 @@ async def game_screen(screen):
 
     # クロックオブジェクトの作成
     clock = pygame.time.Clock()
+    start_ticks = clock.get_time()
+    rest_time = 10
     running = True
 
     # 描画用のスプライトグループ
@@ -275,15 +277,16 @@ async def game_screen(screen):
 
     while running:
         clock.tick(F_RATE)
+        seconds=(pygame.time.get_ticks()-start_ticks)/1000 #calculate how many seconds
         # await asyncio.sleep(0)
 
-        ### 残ブロックなし
+        ## 残ブロックなし
         if len(blocks) == 0:
             await show_game_clear(screen)
             return
         
-        ### ライフなし
-        if life.get_life() < 1:
+        ### ゲームオーバー
+        if life.get_life() < 1 or seconds > 5:
             await show_game_over(screen)
             running = False
             return
