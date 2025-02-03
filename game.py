@@ -231,13 +231,22 @@ async def show_game_over(screen):
     await result_screen(screen)
 
 ############################
-### 残り時間を表示
+### 時間クラス
 ############################
-async def show_rest_time(screen, now):
-    rest_time = (int) (TIME_LIMIT - now)
-    sysfont = pygame.font.SysFont(None, 30)
-    img = sysfont.render('TIME LEFT : ' + str(rest_time), True, (255, 255, 250))
-    screen.blit(img, (500, 10))
+class Time:
+    def __init__(self, now_time, x, y):
+        self.now_time = now_time
+        self.sysfont = pygame.font.SysFont(None, 30)
+        (self.x, self.y) = (x, y)
+
+    def calc_elapsed_time(self, now, start):
+        self.elapsed_time = (now - start) / 1000
+        return self.elapsed_time
+
+    def show_rest_time(self, screen):
+        self.rest_time = (int) (TIME_LIMIT - self.elapsed_time)
+        img = self.sysfont.render('TIME LEFT : ' + str(self.rest_time), True, (255, 255, 250))
+        screen.blit(img, (self.x, self.y))
 
 ############################
 ### メイン関数 
@@ -247,7 +256,6 @@ async def game_screen(screen):
     # クロックオブジェクトの作成
     clock = pygame.time.Clock()
     start_ticks = pygame.time.get_ticks()
-    rest_time = 10
     running = True
 
     # progressBar = ProgressBar(screen, 50, 50, SCREEN.centerx-50, 5, lambda: 1 - (pygame.time.get_ticks() - start_ticks) / 10, curved=True)
@@ -277,7 +285,7 @@ async def game_screen(screen):
     life = Life(710, 10)
 
     # 制限時間を画面に表示
-    await show_rest_time(screen, 0)
+    time = Time(TIME_LIMIT, 500, 10)
 
     pygame.display.update()  # **画面更新**
 
@@ -288,8 +296,7 @@ async def game_screen(screen):
     while running:
         events = pygame.event.get()
         clock.tick(F_RATE)
-        seconds=(pygame.time.get_ticks()-start_ticks)/1000 #calculate how many seconds
-        # await asyncio.sleep(0)
+        elapsed_time = time.calc_elapsed_time(pygame.time.get_ticks(), start_ticks)
 
         ## 残ブロックなし
         if len(blocks) == 0:
@@ -297,7 +304,7 @@ async def game_screen(screen):
             return
         
         ### ゲームオーバー
-        if life.get_life() < 1 or seconds > TIME_LIMIT:
+        if life.get_life() < 1 or elapsed_time > TIME_LIMIT:
             await show_game_over(screen)
             running = False
             return
@@ -319,10 +326,6 @@ async def game_screen(screen):
         # スコアを描画
         life.draw(screen)
         # 残り時間を描画
-        await show_rest_time(screen, seconds)
+        time.show_rest_time(screen)
 
-        # pygame_widgets.update(events)
         pygame.display.update()  # 画面更新
-
-        # PyGame が初期化されてからの時間をミリ秒単位で返します。
-        # time_elapsed = pygame.time.get_ticks()

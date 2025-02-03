@@ -1,5 +1,6 @@
 import pygame
 from config import SCREEN_MODE, SCREEN
+# from game import Score
 
 async def result_screen(screen):
     screen.fill((0, 0, 0))
