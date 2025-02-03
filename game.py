@@ -208,6 +208,35 @@ class Life:
         return self.life
  
 ############################
+### クリアを表示し，画面遷移 
+############################
+async def show_game_clear(screen):
+    ### GAME CLEARを表示
+    font = pygame.font.Font(None, 60)
+    text_str = "GAME CLEAR"
+    text = font.render(text_str, True, (63,255,63))
+    font_width, font_height = font.size(text_str)
+    screen.blit(text, (SCREEN.centerx-font_width/2, SCREEN.centery-font_height/2))
+    pygame.display.update()
+    ### CLEAR画面時間
+    await asyncio.sleep(E_TIME)
+    await result_screen(screen)
+
+############################
+### ゲームオーバーを表示し，画面遷移 
+############################
+async def show_game_over(screen):
+    ### GAME OVERを表示
+    font = pygame.font.Font(None, 60)
+    text_str = "GAME OVER"
+    text = font.render(text_str, True, (63,255,63))
+    font_width, font_height = font.size(text_str)
+    screen.blit(text, (SCREEN.centerx-font_width/2, SCREEN.centery-font_height/2))
+    pygame.display.update()
+    await asyncio.sleep(E_TIME)
+    await result_screen(screen)
+
+############################
 ### メイン関数 
 ############################
 async def game_screen(screen):
@@ -250,29 +279,21 @@ async def game_screen(screen):
 
         ### 残ブロックなし
         if len(blocks) == 0:
-            ### GAME CLEARを表示
-            font = pygame.font.Font(None, 60)
-            text = font.render("GAME CLEAR", True, (63,255,63))
-            screen.blit(text, [59,299])
-            pygame.display.update()
-            ### CLEAR画面時間
-            # pygame.time.wait(E_TIME)
-            await asyncio.sleep(E_TIME)
+            await show_game_clear(screen)
+            return
+        
+        ### ライフなし
+        if life.get_life() < 1:
+            await show_game_over(screen)
             running = False
-            current_state = SCREEN_MODE.RESULT
-            await result_screen(screen)
             return
 
+        # イベント処理
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 running = False
-            if life.get_life() < 1:
-                running = False
-                current_state = SCREEN_MODE.RESULT
-                await result_screen(screen)
-                return
 
         # 全てのスプライトグループを更新
         group.update()
