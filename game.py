@@ -13,12 +13,12 @@ P_WIDTH = 100           # パドル幅
 P_HEIGHT = 10           # パドル高さ
 BLOCK_WIDTH = 50        # ブロック幅
 BLOCK_HEIGHT = 25       # ブロック高さ
-BLOCK_LOWS = 6          # ブロック縦列の数
-BLOCK_COLS = 14         # ブロック横列の数
+BLOCK_LOWS = 2          # ブロック縦列の数
+BLOCK_COLS = 1         # ブロック横列の数
 B_TOP = 50              # ブロック上の余白
 BLOCK_OFFSET_X = int((SCREEN.width - (BLOCK_WIDTH * BLOCK_COLS)) / 2)   # ブロック横の余白
 
-E_TIME = 3            # ゲーム終了を表示する時間
+E_TIME = 2.5           # ゲーム終了を表示する時間
 
 ### 画像のパス
 PADDLE_IMAGE_PATH = "paddle_04.png"
@@ -159,6 +159,10 @@ class Block(pygame.sprite.Sprite):
         self.rect.left = BLOCK_OFFSET_X + x * self.rect.width
         self.rect.top = y * self.rect.height + B_TOP
 
+    # 残りのブロック数を取得
+    def get_blocks(self):
+        return len(self.blocks)
+
 ############################
 ### スコアクラス
 ############################
@@ -227,7 +231,7 @@ async def game_screen(screen):
 
     # ブロックの作成 (14 x 10)
     for y in range(0, BLOCK_LOWS):
-        for x in range(0,BLOCK_COLS):
+        for x in range(0, BLOCK_COLS):
             Block(BLOCK_IMAGE_PATH, x, y)
 
     # スコアを画面に表示
@@ -236,11 +240,28 @@ async def game_screen(screen):
     # ライフを画面に表示
     life = Life(710, 10)
 
+    global current_state
+
     Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score, life)
 
     while running:
         clock.tick(F_RATE)
         # await asyncio.sleep(0)
+
+        ### 残ブロックなし
+        if len(blocks) == 0:
+            ### GAME CLEARを表示
+            font = pygame.font.Font(None, 60)
+            text = font.render("GAME CLEAR", True, (63,255,63))
+            screen.blit(text, [59,299])
+            pygame.display.update()
+            ### CLEAR画面時間
+            # pygame.time.wait(E_TIME)
+            await asyncio.sleep(E_TIME)
+            running = False
+            current_state = SCREEN_MODE.RESULT
+            await result_screen(screen)
+            return
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -249,7 +270,6 @@ async def game_screen(screen):
                 running = False
             if life.get_life() < 1:
                 running = False
-                global current_state
                 current_state = SCREEN_MODE.RESULT
                 await result_screen(screen)
                 return
