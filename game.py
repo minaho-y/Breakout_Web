@@ -3,18 +3,22 @@ import math
 import pygame
 import sys
 import pygame.event
+# import pygame_widgets
 from pygame.locals import *
 from config import SCREEN, SCREEN_MODE, F_RATE
 from result import result_screen
+# from pygame_widgets.progressbar import ProgressBar
 
 ### 定数
+START_LIFE = 3          # ライフの数
+TIME_LIMIT = 30         # タイムリミット
 BALL_SIZE = 18          # ボールサイズ
 P_WIDTH = 100           # パドル幅
 P_HEIGHT = 10           # パドル高さ
 BLOCK_WIDTH = 50        # ブロック幅
 BLOCK_HEIGHT = 25       # ブロック高さ
-BLOCK_LOWS = 2          # ブロック縦列の数
-BLOCK_COLS = 1         # ブロック横列の数
+BLOCK_LOWS = 5          # ブロック縦列の数
+BLOCK_COLS = 10         # ブロック横列の数
 B_TOP = 50              # ブロック上の余白
 BLOCK_OFFSET_X = int((SCREEN.width - (BLOCK_WIDTH * BLOCK_COLS)) / 2)   # ブロック横の余白
 
@@ -137,16 +141,6 @@ class Ball(pygame.sprite.Sprite):
                     self.rect.top = block.rect.bottom
                     self.dy = -self.dy
 
-            # ### 残ブロックなし
-            # if len(self.blocks) == 0:
-            #     ### GAME CLEARを表示
-            #     font = pygame.font.Font(None, 60)
-            #     text = font.render("GAME CLEAR", True, (63,255,63))
-            #     screen.blit(text, [59,299])
-            #     pygame.display.update()
-            #     ### CLEAR画面時間
-            #     time.sleep(E_TIME)
-
 ############################
 ### ブロッククラス
 ############################
@@ -190,7 +184,7 @@ class Score:
 ############################
 class Life:
     def __init__(self, x, y):
-        self.life = 1
+        self.life = START_LIFE
         self.sysfont = pygame.font.SysFont(None, 30)
         (self.x, self.y) = (x, y)
 
@@ -237,15 +231,26 @@ async def show_game_over(screen):
     await result_screen(screen)
 
 ############################
+### 残り時間を表示
+############################
+async def show_rest_time(screen, now):
+    rest_time = (int) (TIME_LIMIT - now)
+    sysfont = pygame.font.SysFont(None, 30)
+    img = sysfont.render('TIME LEFT : ' + str(rest_time), True, (255, 255, 250))
+    screen.blit(img, (500, 10))
+
+############################
 ### メイン関数 
 ############################
 async def game_screen(screen):
 
     # クロックオブジェクトの作成
     clock = pygame.time.Clock()
-    start_ticks = clock.get_time()
+    start_ticks = pygame.time.get_ticks()
     rest_time = 10
     running = True
+
+    # progressBar = ProgressBar(screen, 50, 50, SCREEN.centerx-50, 5, lambda: 1 - (pygame.time.get_ticks() - start_ticks) / 10, curved=True)
 
     # 描画用のスプライトグループ
     group = pygame.sprite.RenderUpdates()
@@ -271,11 +276,17 @@ async def game_screen(screen):
     # ライフを画面に表示
     life = Life(710, 10)
 
+    # 制限時間を画面に表示
+    await show_rest_time(screen, 0)
+
+    pygame.display.update()  # **画面更新**
+
     global current_state
 
     Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score, life)
 
     while running:
+        events = pygame.event.get()
         clock.tick(F_RATE)
         seconds=(pygame.time.get_ticks()-start_ticks)/1000 #calculate how many seconds
         # await asyncio.sleep(0)
@@ -286,13 +297,13 @@ async def game_screen(screen):
             return
         
         ### ゲームオーバー
-        if life.get_life() < 1 or seconds > 5:
+        if life.get_life() < 1 or seconds > TIME_LIMIT:
             await show_game_over(screen)
             running = False
             return
 
         # イベント処理
-        for event in pygame.event.get():
+        for event in events:
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -307,7 +318,10 @@ async def game_screen(screen):
         score.draw(screen)
         # スコアを描画
         life.draw(screen)
+        # 残り時間を描画
+        await show_rest_time(screen, seconds)
 
+        # pygame_widgets.update(events)
         pygame.display.update()  # 画面更新
 
         # PyGame が初期化されてからの時間をミリ秒単位で返します。
