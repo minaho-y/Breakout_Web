@@ -6,12 +6,12 @@ import pygame.event
 # import pygame_widgets
 from pygame.locals import *
 from config import SCREEN, SCREEN_MODE, F_RATE
-from result import result_screen, blocks_left
+from result import result_screen
 # from pygame_widgets.progressbar import ProgressBar
 
 ### 定数
 START_LIFE = 3          # ライフの数
-TIME_LIMIT = 3         # タイムリミット
+TIME_LIMIT = 40         # タイムリミット
 BALL_SIZE = 18          # ボールサイズ
 P_WIDTH = 100           # パドル幅
 P_HEIGHT = 10           # パドル高さ
@@ -69,6 +69,9 @@ class Ball(pygame.sprite.Sprite):
         self.speed = speed
         self.angle_left = angle_left    # パドルへの反射方向
         self.angle_right = angle_right
+        # ボールの初期位置（パドルの上）
+        self.rect.centerx = self.paddle.rect.centerx
+        self.rect.bottom = self.paddle.rect.top
 
     def start(self):
         # ボールの初期位置（パドルの上）
@@ -234,6 +237,7 @@ class Time:
         self.now_time = now_time
         self.sysfont = pygame.font.SysFont(None, 40)
         (self.x, self.y) = (580, 10)
+        self.elapsed_time = 0
 
     def calc_elapsed_time(self, now, start):
         self.elapsed_time = (now - start) / 1000
@@ -251,11 +255,13 @@ class Time:
 ### メイン関数 
 ############################
 async def game_screen(screen):
+    running = True
 
     # クロックオブジェクトの作成
     clock = pygame.time.Clock()
-    start_ticks = pygame.time.get_ticks()
-    running = True
+    start_ticks = None
+    ball_started = False    # ボールが発射されたか
+    elapsed_time = 0
 
     # progressBar = ProgressBar(screen, 50, 50, SCREEN.centerx-50, 5, lambda: 1 - (pygame.time.get_ticks() - start_ticks) / 10, curved=True)
 
@@ -287,17 +293,35 @@ async def game_screen(screen):
     # 制限時間を画面に表示
     time = Time(TIME_LIMIT)
 
+    # global current_state
+
+    ball = Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score, life) 
+
     pygame.display.update()  # **画面更新**
-
-    global current_state
-
-    Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score, life)
 
     while running:
         events = pygame.event.get()
         clock.tick(F_RATE)
-        elapsed_time = time.calc_elapsed_time(pygame.time.get_ticks(), start_ticks)
 
+        # イベント処理
+        for event in events:
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                elif event.key == pygame.K_SPACE and ball_started == False:
+                    ball_started = True
+                    start_ticks = pygame.time.get_ticks()
+                    ball.start()
+
+        if ball_started:
+            group.update()
+            elapsed_time = time.calc_elapsed_time(pygame.time.get_ticks(), start_ticks)
+        else:   # 停止状態
+            paddle.update()
+            ball.update()
+        
         ## クリア（残ブロックなし）
         if len(blocks) == 0:
             is_clear = 1
@@ -310,16 +334,7 @@ async def game_screen(screen):
             await show_game_result(screen, is_clear, score.get_score(), time.get_left_time())
             running = False
             return
-
-        # イベント処理
-        for event in events:
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
-
-        # 全てのスプライトグループを更新
-        group.update()
+        
         screen.fill((20, 20, 20))  # 画面クリア
         # データ領域塗りつぶし
         pygame.draw.rect(screen, (50,40,200), (0, 0, SCREEN.width, 45))
