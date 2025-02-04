@@ -11,15 +11,16 @@ from result import result_screen
 
 ### 定数
 START_LIFE = 3          # ライフの数
-TIME_LIMIT = 30         # タイムリミット
+TIME_LIMIT = 120         # タイムリミット
 BALL_SIZE = 18          # ボールサイズ
 P_WIDTH = 100           # パドル幅
 P_HEIGHT = 10           # パドル高さ
 BLOCK_WIDTH = 50        # ブロック幅
 BLOCK_HEIGHT = 25       # ブロック高さ
-BLOCK_LOWS = 5          # ブロック縦列の数
+BLOCK_LOWS = 6          # ブロック縦列の数
 BLOCK_COLS = 10         # ブロック横列の数
-B_TOP = 50              # ブロック上の余白
+B_TOP = 90              # ブロック上の余白
+DATA_AREA = 50          # データ表示のエリア
 BLOCK_OFFSET_X = int((SCREEN.width - (BLOCK_WIDTH * BLOCK_COLS)) / 2)   # ブロック横の余白
 
 E_TIME = 2.5           # ゲーム終了を表示する時間
@@ -28,6 +29,7 @@ E_TIME = 2.5           # ゲーム終了を表示する時間
 PADDLE_IMAGE_PATH = "paddle_04.png"
 BALL_IMAGE_PATH = "ballYellow_02.png"
 BLOCK_IMAGE_PATH = "tileBlue_02.png"
+HEART_IMAGE_PATH = "suit_hearts.png"
 
 ############################
 ### パドルクラス
@@ -93,8 +95,8 @@ class Ball(pygame.sprite.Sprite):
         if self.rect.right > SCREEN.right:  # 右側
             self.rect.right = SCREEN.right
             self.dx = -self.dx
-        if self.rect.top < SCREEN.top:      # 上側
-            self.rect.top = SCREEN.top
+        if self.rect.top <  DATA_AREA + SCREEN.top:      # 上側
+            self.rect.top = DATA_AREA + SCREEN.top 
             self.dy = -self.dy
 
         # パドルとの反射(左端:135度方向, 右端:45度方向, それ以外:線形補間)
@@ -161,14 +163,17 @@ class Block(pygame.sprite.Sprite):
 ### スコアクラス
 ############################
 class Score:
-    def __init__(self, x, y):
+    def __init__(self, screen):
         self.score = 0
-        self.sysfont = pygame.font.SysFont(None, 30)
-        (self.x, self.y) = (x, y)
+        self.draw(screen)
 
     def draw(self, screen):
-        img = self.sysfont.render('SCORE : ' + str(self.score), True, (255, 255, 250))
-        screen.blit(img, (self.x, self.y))
+        font = pygame.font.Font(None, 40)
+        self.text_str = 'SCORE : ' + str(self.score)
+        self.text = font.render(self.text_str, True, (255, 255, 250))
+        self.text_w, self.str_y = font.size(self.text_str)
+        (self.x, self.y) = (SCREEN.centerx - self.text_w/2, 10)
+        screen.blit(self.text, (self.x, self.y))
 
     def add_score(self, x):
         self.score += x
@@ -183,20 +188,25 @@ class Score:
 ### ライフクラス
 ############################
 class Life:
-    def __init__(self, x, y):
+    def __init__(self, screen):
+        font = pygame.font.Font(None, 40)
+        self.text_str = 'LIFE : '
+        self.text = font.render(self.text_str, True, (255, 255, 250))
+        self.text_w, self.str_y = font.size(self.text_str)
+        (self.x, self.y) = (10, 10)
+
         self.life = START_LIFE
-        self.sysfont = pygame.font.SysFont(None, 30)
-        (self.x, self.y) = (x, y)
-
+        self.image = pygame.image.load(HEART_IMAGE_PATH).convert_alpha()
+        self.image = pygame.transform.scale(self.image, (32, 32))
+        self.draw(screen)
+        
     def draw(self, screen):
-        img = self.sysfont.render('LIFE : ' + str(self.life), True, (255, 255, 250))
-        screen.blit(img, (self.x, self.y))
-
-    # def set_life(self, x):
-    #     self.life = x
+        screen.blit(self.text, (self.x, self.y))
+        for i in range(self.life):
+            screen.blit(self.image, (self.text_w + 10 + i * 35, 7))
 
     def add_life(self, x):
-        self.life += x
+        self.life = max(0, self.life + x)
 
     def get_life(self):
         return self.life
@@ -206,7 +216,7 @@ class Life:
 ############################
 async def show_game_clear(screen):
     ### GAME CLEARを表示
-    font = pygame.font.Font(None, 60)
+    font = pygame.font.Font(None, 90)
     text_str = "GAME CLEAR"
     text = font.render(text_str, True, (63,255,63))
     font_width, font_height = font.size(text_str)
@@ -221,7 +231,7 @@ async def show_game_clear(screen):
 ############################
 async def show_game_over(screen):
     ### GAME OVERを表示
-    font = pygame.font.Font(None, 60)
+    font = pygame.font.Font(None, 90)
     text_str = "GAME OVER"
     text = font.render(text_str, True, (63,255,63))
     font_width, font_height = font.size(text_str)
@@ -234,10 +244,10 @@ async def show_game_over(screen):
 ### 時間クラス
 ############################
 class Time:
-    def __init__(self, now_time, x, y):
+    def __init__(self, now_time):
         self.now_time = now_time
-        self.sysfont = pygame.font.SysFont(None, 30)
-        (self.x, self.y) = (x, y)
+        self.sysfont = pygame.font.SysFont(None, 40)
+        (self.x, self.y) = (580, 10)
 
     def calc_elapsed_time(self, now, start):
         self.elapsed_time = (now - start) / 1000
@@ -270,6 +280,7 @@ async def game_screen(screen):
     Paddle.containers = group
     Ball.containers = group
     Block.containers = group, blocks
+    Life.containers = group
 
     paddle = Paddle(PADDLE_IMAGE_PATH)
 
@@ -279,13 +290,13 @@ async def game_screen(screen):
             Block(BLOCK_IMAGE_PATH, x, y)
 
     # スコアを画面に表示
-    score = Score(10, 10)
+    score = Score(screen)
 
     # ライフを画面に表示
-    life = Life(710, 10)
+    life = Life(screen)
 
     # 制限時間を画面に表示
-    time = Time(TIME_LIMIT, 500, 10)
+    time = Time(TIME_LIMIT)
 
     pygame.display.update()  # **画面更新**
 
@@ -319,6 +330,8 @@ async def game_screen(screen):
         # 全てのスプライトグループを更新
         group.update()
         screen.fill((0, 0, 0))  # 画面クリア
+        # データ領域塗りつぶし
+        pygame.draw.rect(screen, (50,40,200), (0, 0, SCREEN.width, 45))
         # 全てのスプライトグループを描画
         group.draw(screen)
         # スコアを描画
