@@ -5,24 +5,27 @@ import sys
 import pygame.event
 # import pygame_widgets
 from pygame.locals import *
-from config import SCREEN, SCREEN_MODE, F_RATE
-from result import result_screen
+from config import SCREEN, SCREEN_MODE, F_RATE, TIME_LIMIT, left_time, result_score
+# from result import result_screen
 # from pygame_widgets.progressbar import ProgressBar
 
 ### 定数
 START_LIFE = 3          # ライフの数
-TIME_LIMIT = 3         # タイムリミット
+
 BALL_SIZE = 18          # ボールサイズ
 P_WIDTH = 100           # パドル幅
 P_HEIGHT = 10           # パドル高さ
 BLOCK_WIDTH = 50        # ブロック幅
 BLOCK_HEIGHT = 25       # ブロック高さ
 BLOCK_LOWS = 6          # ブロック縦列の数
-BLOCK_COLS = 15         # ブロック横列の数
+BLOCK_COLS = 1         # ブロック横列の数
 B_TOP = 90              # ブロック上の余白
 DATA_AREA = 50          # データ表示のエリア
 BLOCK_OFFSET_X = int((SCREEN.width - (BLOCK_WIDTH * BLOCK_COLS)) / 2)   # ブロック横の余白
 E_TIME = 2.5           # ゲーム終了を表示する時間
+
+result_time = TIME_LIMIT
+result_score = 0
 
 ### 画像のパス
 PADDLE_IMAGE_PATH = "paddle_04.png"
@@ -216,7 +219,7 @@ class Life:
 ############################
 ### ゲームオーバー or ゲームクリアを表示し，画面遷移 
 ############################
-async def show_game_result(screen, is_clear, score, left_time):
+async def show_game_result(screen, is_clear):
     ### CLEAR or OVERを表示
     font = pygame.font.Font(None, 90)
     if is_clear:
@@ -227,20 +230,22 @@ async def show_game_result(screen, is_clear, score, left_time):
     screen.blit(text, (SCREEN.centerx-font_width/2, SCREEN.centery-font_height/2))
     pygame.display.update()
     await asyncio.sleep(E_TIME)
-    await result_screen(screen, score, left_time)
+    # await result_screen(screen, score, left_time)
 
 ############################
 ### 時間クラス
 ############################
 class Time:
-    def __init__(self, now_time):
-        self.now_time = now_time
+    def __init__(self):
+        # self.now_time = now_time
         self.sysfont = pygame.font.SysFont(None, 40)
         (self.x, self.y) = (580, 10)
         self.elapsed_time = 0
+        self.left_time = TIME_LIMIT
 
     def calc_elapsed_time(self, now, start):
         self.elapsed_time = (now - start) / 1000
+        self.left_time = int(TIME_LIMIT - self.elapsed_time)
         return self.elapsed_time
 
     def show_left_time(self, screen):
@@ -255,6 +260,9 @@ class Time:
 ### メイン関数 
 ############################
 async def game_screen(screen):
+    global result_score
+    global result_time
+    print('GAME')
     running = True
 
     # クロックオブジェクトの作成
@@ -291,7 +299,7 @@ async def game_screen(screen):
     life = Life(screen)
 
     # 制限時間を画面に表示
-    time = Time(TIME_LIMIT)
+    time = Time()
 
     # global current_state
 
@@ -300,6 +308,7 @@ async def game_screen(screen):
     pygame.display.update()  # **画面更新**
 
     while running:
+        # print('Game loop running...') 
         events = pygame.event.get()
         clock.tick(F_RATE)
 
@@ -325,15 +334,23 @@ async def game_screen(screen):
         ## クリア（残ブロックなし）
         if len(blocks) == 0:
             is_clear = 1
-            await show_game_result(screen, is_clear, score.get_score(), time.get_left_time())
-            return
+            global left_time
+            left_time = time.get_left_time()
+            global result_score
+            result_score = score.get_score()
+            await show_game_result(screen, is_clear)
+            return SCREEN_MODE.RESULT
         
         ### ゲームオーバー
         elif life.get_life() < 1 or elapsed_time > TIME_LIMIT:
             is_clear = 0
-            await show_game_result(screen, is_clear, score.get_score(), time.get_left_time())
+            
+            result_time = time.get_left_time()
+            
+            result_score = score.get_score()
+            await show_game_result(screen, is_clear)
             running = False
-            return
+            return SCREEN_MODE.RESULT
         
         screen.fill((20, 20, 20))  # 画面クリア
         # データ領域塗りつぶし

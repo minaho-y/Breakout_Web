@@ -28,38 +28,50 @@ async def main():
         clock.tick(F_RATE)
         await asyncio.sleep(0)    #引数は0で固定
 
-        # 画面が切り替わったら再描画
-        if current_state != previous_state:
-            if current_state == SCREEN_MODE.TITLE:
-                await title_screen(screen)
-            elif current_state == SCREEN_MODE.GAME:
-                await game_screen(screen)
-            elif current_state == SCREEN_MODE.RESULT:
-                await result_screen(screen)
-        previous_state = current_state
-        
         # イベント処理
         for event in pygame.event.get():
             # 閉じるボタンが押されたら終了
             if event.type == pygame.QUIT:
+                print("TITLE: EXIT")  # ← デバッグログ追加
                 running = False
             # キーイベント
             if event.type == pygame.KEYDOWN:
-                print(f"Current state: {current_state}")
+                # print(f"Current state: {current_state}")
                 # Escキーが押されたら終了
                 if event.key == pygame.K_ESCAPE:
+                    print("TITLE SCREEN: ESCAPE")  # ← デバッグログ追加
                     running = False
                 # タイトル画面 -> ゲーム画面
-                if current_state == SCREEN_MODE.TITLE and event.key == pygame.K_RETURN:
-                    current_state = SCREEN_MODE.GAME
+                # if current_state == SCREEN_MODE.TITLE and event.key == pygame.K_RETURN:
+                #     current_state = SCREEN_MODE.GAME
                 # ゲーム画面 -> リザルト画面
                 # if current_state == SCREEN_MODE.GAME:
                 #     current_state = SCREEN_MODE.RESULT
-        
-        pygame.display.flip()  # 画面更新
-    # 終了処理
-    pygame.quit()
-    sys.exit()
+        if current_state != previous_state:
+            print(f'{previous_state=}')
+            print(f'{current_state=}')
 
-# if __name__ == "__main__":
-asyncio.run(main())
+        # 画面が切り替わったら再描画
+        if current_state != previous_state:
+            print(f"SCREEN: {previous_state} -> {current_state}") 
+            if current_state == SCREEN_MODE.TITLE:
+                current_state = await title_screen(screen)
+                print(f"DEBUG: title_screen returned {current_state=}")  # ← 追加
+                print(f"DEBUG: title_screen returned {previous_state=}")  # ← 追加
+            elif current_state == SCREEN_MODE.GAME:
+                print(f"DEBUG: current_state before game_screen: {current_state}")
+                current_state = await game_screen(screen)
+                print(f"DEBUG: current_state after game_screen: {current_state}")
+            elif current_state == SCREEN_MODE.RESULT:
+                current_state = await result_screen(screen)
+            
+            previous_state = None
+
+        pygame.display.flip()  # 画面更新
+        
+    # 終了処理
+    sys.exit()
+    pygame.quit()
+
+if __name__ == "__main__":
+    asyncio.run(main())

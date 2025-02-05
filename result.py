@@ -1,6 +1,7 @@
 import pygame
 from config import SCREEN_MODE, SCREEN, F_RATE
-from title import title_screen
+import game
+# from title import title_screen
 
 HOME_BUTTON_PATH = "HomeButton.png"
 
@@ -19,10 +20,14 @@ class HomeButton(pygame.sprite.Sprite):
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
-async def result_screen(screen, score, left_time):
+async def result_screen(screen):
     running = True
     homeButton = HomeButton()
     clock = pygame.time.Clock()
+
+    # time = Time()
+    # score = Score(screen)
+
 
     while running:
         events = pygame.event.get()
@@ -36,8 +41,8 @@ async def result_screen(screen, score, left_time):
                     running = False
                 elif event.key == pygame.K_h:
                     running = False
-                    await title_screen(screen)
-                    return
+                    # await title_screen(screen)
+                    return SCREEN_MODE.TITLE
             if event.type == pygame.MOUSEBUTTONDOWN:
                 print(f"Mouse clicked at {event.pos}, button: {event.button}")
                 print(f"HomeButton rect: {homeButton.rect}")  # HomeButtonの座標範囲の確認
@@ -45,8 +50,8 @@ async def result_screen(screen, score, left_time):
                 if homeButton.rect.collidepoint(event.pos):
                     print("HomeButton clicked!")  # ボタンが押されたことを確認
                     running = False
-                    await title_screen(screen)
-                    return
+                    # await title_screen(screen)
+                    return SCREEN_MODE.TITLE
 
         screen.fill((20, 20, 20))
 
@@ -57,14 +62,16 @@ async def result_screen(screen, score, left_time):
         screen.blit(img, text_rect)
 
         # Brock Score
+        # global result_score
         font_b = pygame.font.SysFont(None, 50)
-        img_b = font_b.render(f'Block Score : {score}', True, (255, 255, 250))
+        img_b = font_b.render(f'Block Score : {game.result_score}', True, (255, 255, 250))
         text_b_rect = img_b.get_rect(center=(SCREEN.width // 2, 300))
         screen.blit(img_b, text_b_rect)
 
         # Time Remaining
+        # global left_time
         font_t = pygame.font.SysFont(None, 50)
-        img_t = font_t.render(f'Time Left : {left_time}', True, (255, 255, 250))
+        img_t = font_t.render(f'Time Left : {game.result_time}', True, (255, 255, 250))
         text_t_rect = img_t.get_rect(center=(SCREEN.width // 2, 370))
         screen.blit(img_t, text_t_rect)
 
