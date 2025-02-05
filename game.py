@@ -11,7 +11,7 @@ from result import result_screen
 
 ### 定数
 START_LIFE = 3          # ライフの数
-TIME_LIMIT = 40         # タイムリミット
+TIME_LIMIT = 3         # タイムリミット
 BALL_SIZE = 18          # ボールサイズ
 P_WIDTH = 100           # パドル幅
 P_HEIGHT = 10           # パドル高さ
