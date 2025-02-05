@@ -308,7 +308,6 @@ async def game_screen(screen):
     pygame.display.update()  # **画面更新**
 
     while running:
-        # print('Game loop running...') 
         events = pygame.event.get()
         clock.tick(F_RATE)
 
@@ -331,27 +330,6 @@ async def game_screen(screen):
             paddle.update()
             ball.update()
         
-        ## クリア（残ブロックなし）
-        if len(blocks) == 0:
-            is_clear = 1
-            global left_time
-            left_time = time.get_left_time()
-            global result_score
-            result_score = score.get_score()
-            await show_game_result(screen, is_clear)
-            return SCREEN_MODE.RESULT
-        
-        ### ゲームオーバー
-        elif life.get_life() < 1 or elapsed_time > TIME_LIMIT:
-            is_clear = 0
-            
-            result_time = time.get_left_time()
-            
-            result_score = score.get_score()
-            await show_game_result(screen, is_clear)
-            running = False
-            return SCREEN_MODE.RESULT
-        
         screen.fill((20, 20, 20))  # 画面クリア
         # データ領域塗りつぶし
         pygame.draw.rect(screen, (50,40,200), (0, 0, SCREEN.width, 45))
@@ -363,5 +341,23 @@ async def game_screen(screen):
         life.draw(screen)
         # 残り時間を描画
         time.show_left_time(screen)
+
+        ## クリア（残ブロックなし）
+        if len(blocks) == 0:
+            running = False
+            is_clear = 1
+            result_time = time.get_left_time()
+            result_score = score.get_score()
+            await show_game_result(screen, is_clear)
+            return SCREEN_MODE.RESULT
+        
+        ### ゲームオーバー
+        elif life.get_life() < 1 or elapsed_time > TIME_LIMIT:
+            is_clear = 0
+            result_time = time.get_left_time()     
+            result_score = score.get_score()
+            await show_game_result(screen, is_clear)
+            running = False
+            return SCREEN_MODE.RESULT
 
         pygame.display.update()  # 画面更新

@@ -44,11 +44,8 @@ async def result_screen(screen):
                     # await title_screen(screen)
                     return SCREEN_MODE.TITLE
             if event.type == pygame.MOUSEBUTTONDOWN:
-                print(f"Mouse clicked at {event.pos}, button: {event.button}")
-                print(f"HomeButton rect: {homeButton.rect}")  # HomeButtonの座標範囲の確認
 
                 if homeButton.rect.collidepoint(event.pos):
-                    print("HomeButton clicked!")  # ボタンが押されたことを確認
                     running = False
                     # await title_screen(screen)
                     return SCREEN_MODE.TITLE

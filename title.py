@@ -14,7 +14,7 @@ class PlayButton(pygame.sprite.Sprite):
         self.image = pygame.image.load(PLAY_BUTTON_PATH).convert_alpha()
         self.image = pygame.transform.scale(self.image, (self.image.get_width()*0.8, self.image.get_height()*0.8))
         self.rect = self.image.get_rect()
-        self.rect.centery = SCREEN.bottom - 120
+        self.rect.centery = SCREEN.bottom - 150
         self.rect.centerx = SCREEN.width / 2
 
     def draw(self, screen):
@@ -32,23 +32,18 @@ async def title_screen(screen):
 
         for event in events:
             if event.type == pygame.QUIT:
-                print("TITLE SCREEN: QUIT")  # ← デバッグログ追加
                 running = False
                 return None
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    print("TITLE SCREEN: ESC")  # ← デバッグログ追加
                     running = False
                     return None
                 if event.key == pygame.K_RETURN:
-                    print("TITLE SCREEN: Enter -> GAME SCREEN")
                     running = False
                     return SCREEN_MODE.GAME
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if playButton.rect.collidepoint(event.pos):
-                    print("TITLE SCREEN: Mouse Click -> GAME SCREEN") 
                     running = False
-                    print("DEBUG: Exiting title_screen with SCREEN_MODE.GAME")  # 追加
                     return SCREEN_MODE.GAME
 
         screen.fill((20, 20, 20))
@@ -57,7 +52,7 @@ async def title_screen(screen):
         # Break Out
         font = pygame.font.SysFont(None, 100)
         img = font.render('BREAK OUT', True, (255, 255, 250))
-        text_rect = img.get_rect(center=(SCREEN.width // 2, SCREEN.height // 2))
+        text_rect = img.get_rect(center=(SCREEN.width // 2, SCREEN.height // 3))
         screen.blit(img, text_rect)
 
         playButton.draw(screen)
