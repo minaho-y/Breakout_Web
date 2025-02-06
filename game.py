@@ -5,21 +5,11 @@ import sys
 import pygame.event
 # import pygame_widgets
 from pygame.locals import *
-from config import SCREEN, SCREEN_MODE, F_RATE, TIME_LIMIT, left_time, result_score
+from config import SCREEN, SCREEN_MODE, F_RATE, TIME_LIMIT, left_time, result_score, START_LIFE, P_WIDTH, P_HEIGHT, BLOCK_WIDTH, BLOCK_HEIGHT, BLOCK_LOWS, BLOCK_COLS, B_TOP, BALL_SIZE
 # from result import result_screen
 # from pygame_widgets.progressbar import ProgressBar
 
 ### 定数
-START_LIFE = 3          # ライフの数
-
-BALL_SIZE = 18          # ボールサイズ
-P_WIDTH = 100           # パドル幅
-P_HEIGHT = 10           # パドル高さ
-BLOCK_WIDTH = 50        # ブロック幅
-BLOCK_HEIGHT = 25       # ブロック高さ
-BLOCK_LOWS = 6          # ブロック縦列の数
-BLOCK_COLS = 1         # ブロック横列の数
-B_TOP = 90              # ブロック上の余白
 DATA_AREA = 50          # データ表示のエリア
 BLOCK_OFFSET_X = int((SCREEN.width - (BLOCK_WIDTH * BLOCK_COLS)) / 2)   # ブロック横の余白
 E_TIME = 2.5           # ゲーム終了を表示する時間
