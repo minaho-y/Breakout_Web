@@ -7,7 +7,6 @@ from title import title_screen
 from game import game_screen
 from result import result_screen
 
-current_state = SCREEN_MODE.TITLE  # 初期状態はタイトル画面
 ############################
 ### メイン関数
 ############################
@@ -18,11 +17,9 @@ async def main():
 
     clock = pygame.time.Clock()
 
-    # 現在の画面を記録（変更を検知するため）
-    previous_state = None 
-
-    global current_state
     running = True
+
+    current_state = SCREEN_MODE.TITLE  # 初期状態はタイトル画面
 
     while running:
         clock.tick(F_RATE)
@@ -38,20 +35,14 @@ async def main():
                 # Escキーが押されたら終了
                 if event.key == pygame.K_ESCAPE:
                     running = False
-        if current_state != previous_state:
-            print(f'{previous_state=}')
-            print(f'{current_state=}')
 
-        # 画面が切り替わったら再描画
-        if current_state != previous_state:
-            if current_state == SCREEN_MODE.TITLE:
-                current_state = await title_screen(screen)
-            elif current_state == SCREEN_MODE.GAME:
-                current_state = await game_screen(screen)
-            elif current_state == SCREEN_MODE.RESULT:
-                current_state = await result_screen(screen)
-            
-            previous_state = None
+        # 画面遷移
+        if current_state == SCREEN_MODE.TITLE:
+            current_state = await title_screen(screen)
+        elif current_state == SCREEN_MODE.GAME:
+            current_state = await game_screen(screen)
+        elif current_state == SCREEN_MODE.RESULT:
+            current_state = await result_screen(screen)
 
         pygame.display.flip()  # 画面更新
         
