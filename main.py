@@ -50,5 +50,5 @@ async def main():
     sys.exit()
     pygame.quit()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+asyncio.run(main())
