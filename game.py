@@ -165,7 +165,7 @@ class Score:
         self.text_str = 'SCORE : ' + str(self.score)
         self.text = font.render(self.text_str, True, (255, 255, 250))
         self.text_w, self.str_y = font.size(self.text_str)
-        (self.x, self.y) = (SCREEN.centerx - self.text_w/2, 10)
+        (self.x, self.y) = (10, 10)
         screen.blit(self.text, (self.x, self.y))
 
     def add_score(self, x):
