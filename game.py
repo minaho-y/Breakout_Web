@@ -5,7 +5,7 @@ import sys
 import pygame.event
 # import pygame_widgets
 from pygame.locals import *
-from config import SCREEN, SCREEN_MODE, F_RATE, TIME_LIMIT, left_time, result_score, START_LIFE, P_WIDTH, P_HEIGHT, BLOCK_WIDTH, BLOCK_HEIGHT, BLOCK_LOWS, BLOCK_COLS, B_TOP, BALL_SIZE
+from config import SCREEN, SCREEN_MODE, F_RATE, TIME_LIMIT, P_WIDTH, P_HEIGHT, BLOCK_WIDTH, BLOCK_HEIGHT, BLOCK_LOWS, BLOCK_COLS, B_TOP, BALL_SIZE
 # from result import result_screen
 # from pygame_widgets.progressbar import ProgressBar
 
@@ -48,7 +48,7 @@ class Paddle(pygame.sprite.Sprite):
 ### ボールクラス
 ############################
 class Ball(pygame.sprite.Sprite):
-    def __init__(self, filename, paddle, blocks, speed, angle_left, angle_right, score, life):
+    def __init__(self, filename, paddle, blocks, speed, angle_left, angle_right, score, time):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.image = pygame.image.load(filename).convert_alpha()
         self.image = pygame.transform.scale(self.image, (BALL_SIZE, BALL_SIZE))
@@ -57,7 +57,7 @@ class Ball(pygame.sprite.Sprite):
         self.paddle = paddle        # パドルへの参照
         self.blocks = blocks        # ブロックグループへの参照
         self.score = score          # スコアへの参照
-        self.life = life            # ライフへの参照
+        self.time = time
         self.update = self.start    # ゲーム開始状態に更新
         self.speed = speed
         self.angle_left = angle_left    # パドルへの反射方向
@@ -107,10 +107,8 @@ class Ball(pygame.sprite.Sprite):
         # ボールを落とした場合
         if self.rect.top > SCREEN.bottom:
             self.update = self.start    # ボールを初期状態に
-            self.life.add_life(-1)      # ライフを1減らす
-            if self.score.get_score() < 50:
-                self.score.set_score(0)     # スコアを0点に
-            else: self.score.add_score(-50)
+            self.time.add_time(-10)
+            # self.score.add_score(-50)
 
         # ボールと衝突したブロックリストを取得
         blocks_collided = pygame.sprite.spritecollide(self, self.blocks, True)
@@ -171,40 +169,10 @@ class Score:
         screen.blit(self.text, (self.x, self.y))
 
     def add_score(self, x):
-        self.score += x
-
-    def set_score(self, score):
-        self.score = score
-
-    def get_score(self):
-        return self.score
-    
-############################
-### ライフクラス
-############################
-class Life:
-    def __init__(self, screen):
-        font = pygame.font.Font(None, 40)
-        self.text_str = 'LIFE : '
-        self.text = font.render(self.text_str, True, (255, 255, 250))
-        self.text_w, self.str_y = font.size(self.text_str)
-        (self.x, self.y) = (10, 10)
-
-        self.life = START_LIFE
-        self.image = pygame.image.load(HEART_IMAGE_PATH).convert_alpha()
-        self.image = pygame.transform.scale(self.image, (32, 32))
-        self.draw(screen)
-        
-    def draw(self, screen):
-        screen.blit(self.text, (self.x, self.y))
-        for i in range(self.life):
-            screen.blit(self.image, (self.text_w + 10 + i * 35, 7))
-
-    def add_life(self, x):
-        self.life = max(0, self.life + x)
-
-    def get_life(self):
-        return self.life
+        if x < 0:
+            self.score = max(0, self.score+x)
+        else:
+            self.score += x
 
 ############################
 ### ゲームオーバー or ゲームクリアを表示し，画面遷移 
@@ -232,19 +200,17 @@ class Time:
         (self.x, self.y) = (580, 10)
         self.elapsed_time = 0
         self.left_time = TIME_LIMIT
-
-    def calc_elapsed_time(self, now, start):
-        self.elapsed_time = (now - start) / 1000
-        self.left_time = int(TIME_LIMIT - self.elapsed_time)
-        return self.elapsed_time
+    
+    def calc_left_time(self):
+        self.left_time = max(0, int(TIME_LIMIT - self.elapsed_time))
 
     def show_left_time(self, screen):
-        self.left_time = int(TIME_LIMIT - self.elapsed_time)
+        self.calc_left_time()
         img = self.sysfont.render('TIME LEFT : ' + str(self.left_time), True, (255, 255, 250))
         screen.blit(img, (self.x, self.y))
 
-    def get_left_time(self):
-        return self.left_time
+    def add_time(self, x):
+        self.elapsed_time -= x
 
 ############################
 ### メイン関数 
@@ -252,14 +218,13 @@ class Time:
 async def game_screen(screen):
     global result_score
     global result_time
-    print('GAME')
     running = True
 
     # クロックオブジェクトの作成
     clock = pygame.time.Clock()
-    start_ticks = None
+    previous_ticks = None
     ball_started = False    # ボールが発射されたか
-    elapsed_time = 0
+    # elapsed_time = 0
 
     # progressBar = ProgressBar(screen, 50, 50, SCREEN.centerx-50, 5, lambda: 1 - (pygame.time.get_ticks() - start_ticks) / 10, curved=True)
 
@@ -273,7 +238,6 @@ async def game_screen(screen):
     Paddle.containers = group
     Ball.containers = group
     Block.containers = group, blocks
-    Life.containers = group
 
     paddle = Paddle(PADDLE_IMAGE_PATH)
 
@@ -285,17 +249,14 @@ async def game_screen(screen):
     # スコアを画面に表示
     score = Score(screen)
 
-    # ライフを画面に表示
-    life = Life(screen)
-
     # 制限時間を画面に表示
     time = Time()
 
     # global current_state
 
-    ball = Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score, life) 
+    ball = Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score, time) 
 
-    pygame.display.update()  # **画面更新**
+    pygame.display.update()  # 画面更新
 
     while running:
         events = pygame.event.get()
@@ -310,12 +271,16 @@ async def game_screen(screen):
                     running = False
                 elif event.key == pygame.K_SPACE and ball_started == False:
                     ball_started = True
-                    start_ticks = pygame.time.get_ticks()
+                    previous_ticks = pygame.time.get_ticks()
                     ball.start()
 
         if ball_started:
             group.update()
-            elapsed_time = time.calc_elapsed_time(pygame.time.get_ticks(), start_ticks)
+            # 現在のフレームの経過時間を計算して累積する
+            current_ticks = pygame.time.get_ticks()
+            time.elapsed_time += (current_ticks - previous_ticks) / 1000  # 秒単位で加算
+            previous_ticks = current_ticks  # 現在のフレームを次回の前フレームとして更新
+
         else:   # 停止状態
             paddle.update()
             ball.update()
@@ -327,8 +292,7 @@ async def game_screen(screen):
         group.draw(screen)
         # スコアを描画
         score.draw(screen)
-        # スコアを描画
-        life.draw(screen)
+
         # 残り時間を描画
         time.show_left_time(screen)
 
@@ -336,16 +300,16 @@ async def game_screen(screen):
         if len(blocks) == 0:
             running = False
             is_clear = 1
-            result_time = time.get_left_time()
-            result_score = score.get_score()
+            result_time = time.left_time
+            result_score = score.score
             await show_game_result(screen, is_clear)
             return SCREEN_MODE.RESULT
         
         ### ゲームオーバー
-        elif life.get_life() < 1 or elapsed_time > TIME_LIMIT:
+        elif time.left_time <= 0:
             is_clear = 0
-            result_time = time.get_left_time()     
-            result_score = score.get_score()
+            result_time = time.left_time   
+            result_score = score.score
             await show_game_result(screen, is_clear)
             running = False
             return SCREEN_MODE.RESULT
