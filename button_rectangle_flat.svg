@@ -1,0 +1,11 @@
+<svg width="384" height="166" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" opacity="0.3">
+  <defs/>
+  <g transform="scale(2, 2.6)">
+
+    <path stroke="none" fill="#FFFFFF" d="M186.5 2.05 Q190 2.25 190 5.95 L190 58 Q190 62 186 62 L6 62 Q2 62 2 58 L2 5.95 Q2 2.3 5.4 2.05 L5.9 2 6 2 186.5 2.05 M186.4 4.05 L6.1 4 5.6 4.05 5.55 4.05 Q4 4.2 4 5.95 L4 58 Q4 60 6 60 L186 60 Q188 60 188 58 L188 5.95 Q188 4.2 186.4 4.05"/>
+    <path stroke="none" fill="#DADCE7" d="M186.4 4.05 Q188 4.2 188 5.95 L188 58 Q188 60 186 60 L6 60 Q4 60 4 58 L4 5.95 Q4 4.2 5.55 4.05 L5.6 4.05 6.1 4 186.4 4.05"/>
+  </g>
+  <text x="50%" y="50%" fill="black" font-size="70" text-anchor="middle" textLength="320" lengthAdjust="spacingAndGlyphs" dominant-baseline="central" font-family="Kenney Future Narrow">
+    Press Space
+  </text>
+</svg>

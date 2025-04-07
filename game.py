@@ -3,10 +3,8 @@ import math
 import pygame
 import sys
 import pygame.event
-# import pygame_widgets
 from pygame.locals import *
 from config import SCREEN, SCREEN_MODE, F_RATE, TIME_LIMIT, P_WIDTH, P_HEIGHT, BLOCK_WIDTH, BLOCK_HEIGHT, BLOCK_LOWS, BLOCK_COLS, B_TOP, BALL_SIZE
-# from result import result_screen
 # from pygame_widgets.progressbar import ProgressBar
 
 ### 定数
@@ -22,6 +20,7 @@ PADDLE_IMAGE_PATH = "paddle_04.png"
 BALL_IMAGE_PATH = "ballYellow_02.png"
 BLOCK_IMAGE_PATH = "tileBlue_02.png"
 HEART_IMAGE_PATH = "suit_hearts.png"
+PRESS_SPACE_PATH = "press_space.png"
 
 ############################
 ### パドルクラス
@@ -108,7 +107,6 @@ class Ball(pygame.sprite.Sprite):
         if self.rect.top > SCREEN.bottom:
             self.update = self.start    # ボールを初期状態に
             self.time.add_time(-10)
-            # self.score.add_score(-50)
 
         # ボールと衝突したブロックリストを取得
         blocks_collided = pygame.sprite.spritecollide(self, self.blocks, True)
@@ -175,27 +173,27 @@ class Score:
             self.score += x
 
 ############################
-### ゲームオーバー or ゲームクリアを表示し，画面遷移 
+### ゲームオーバー or ゲームクリアを表示
 ############################
 async def show_game_result(screen, is_clear):
     ### CLEAR or OVERを表示
     font = pygame.font.Font(None, 90)
     if is_clear:
         text_str = "GAME CLEAR"
-    else: text_str = "GAME OVER"
+    else: 
+        text_str = "GAME OVER"
+        
     text = font.render(text_str, True, (63,255,63))
     font_width, font_height = font.size(text_str)
     screen.blit(text, (SCREEN.centerx-font_width/2, SCREEN.centery-font_height/2))
     pygame.display.update()
     await asyncio.sleep(E_TIME)
-    # await result_screen(screen, score, left_time)
 
 ############################
 ### 時間クラス
 ############################
 class Time:
     def __init__(self):
-        # self.now_time = now_time
         self.sysfont = pygame.font.SysFont(None, 40)
         (self.x, self.y) = (580, 10)
         self.elapsed_time = 0
@@ -219,12 +217,12 @@ async def game_screen(screen):
     global result_score
     global result_time
     running = True
+    clear_delay = 0  # フレーム遅延用のカウンター
 
     # クロックオブジェクトの作成
     clock = pygame.time.Clock()
     previous_ticks = None
     ball_started = False    # ボールが発射されたか
-    # elapsed_time = 0
 
     # progressBar = ProgressBar(screen, 50, 50, SCREEN.centerx-50, 5, lambda: 1 - (pygame.time.get_ticks() - start_ticks) / 10, curved=True)
 
@@ -241,7 +239,7 @@ async def game_screen(screen):
 
     paddle = Paddle(PADDLE_IMAGE_PATH)
 
-    # ブロックの作成 (14 x 10)
+    # ブロックの作成
     for y in range(0, BLOCK_LOWS):
         for x in range(0, BLOCK_COLS):
             Block(BLOCK_IMAGE_PATH, x, y)
@@ -252,8 +250,6 @@ async def game_screen(screen):
     # 制限時間を画面に表示
     time = Time()
 
-    # global current_state
-
     ball = Ball(BALL_IMAGE_PATH, paddle, blocks, 5, 135, 45, score, time) 
 
     pygame.display.update()  # 画面更新
@@ -262,6 +258,10 @@ async def game_screen(screen):
         events = pygame.event.get()
         clock.tick(F_RATE)
 
+        screen.fill((20, 20, 20))
+        pygame.draw.rect(screen, (50,40,200), (0, 0, SCREEN.width, 45))
+        group.draw(screen)
+
         # イベント処理
         for event in events:
             if event.type == pygame.QUIT:
@@ -269,6 +269,7 @@ async def game_screen(screen):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
+                # ボール停止時
                 elif event.key == pygame.K_SPACE and ball_started == False:
                     ball_started = True
                     previous_ticks = pygame.time.get_ticks()
@@ -284,26 +285,30 @@ async def game_screen(screen):
         else:   # 停止状態
             paddle.update()
             ball.update()
+
+            # "PRESS SPACE" 表示
+            image = pygame.image.load(PRESS_SPACE_PATH).convert_alpha()
+            image = pygame.transform.scale(image, (int(image.get_width()), int(image.get_height() * 0.8)))
+            rect = image.get_rect(center=(SCREEN.width / 2, SCREEN.height / 2))
+            screen.blit(image, rect.topleft)
         
-        screen.fill((20, 20, 20))  # 画面クリア
-        # データ領域塗りつぶし
-        pygame.draw.rect(screen, (50,40,200), (0, 0, SCREEN.width, 45))
-        # 全てのスプライトグループを描画
-        group.draw(screen)
-        # スコアを描画
         score.draw(screen)
 
-        # 残り時間を描画
         time.show_left_time(screen)
+
+        pygame.display.update()  # 画面更新
 
         ## クリア（残ブロックなし）
         if len(blocks) == 0:
-            running = False
-            is_clear = 1
-            result_time = time.left_time
-            result_score = score.score
-            await show_game_result(screen, is_clear)
-            return SCREEN_MODE.RESULT
+            if clear_delay == 0:
+                clear_delay = 1  # 次のフレームに備える
+            elif clear_delay == 1:
+                running = False
+                is_clear = 1
+                result_time = time.left_time
+                result_score = score.score
+                await show_game_result(screen, is_clear)
+                return SCREEN_MODE.RESULT
         
         ### ゲームオーバー
         elif time.left_time <= 0:
@@ -313,5 +318,3 @@ async def game_screen(screen):
             await show_game_result(screen, is_clear)
             running = False
             return SCREEN_MODE.RESULT
-
-        pygame.display.update()  # 画面更新

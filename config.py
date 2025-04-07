@@ -7,8 +7,8 @@ SCREEN = pygame.Rect(0, 0, 800, 600) # 画面サイズ
 ### 定数
 F_RATE = 60             # フレームレート
 
-TIME_LIMIT = 90         # タイムリミット
-START_LIFE = 3          # ライフの数
+TIME_LIMIT = 120         # タイムリミット
+# START_LIFE = 3          # ライフの数
 P_WIDTH = 100           # パドル幅
 P_HEIGHT = 10           # パドル高さ
 BLOCK_WIDTH = 80        # ブロック幅
